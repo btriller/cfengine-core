@@ -151,6 +151,7 @@ static bool SelectProcess(const char *procentry,
     assert(a != NULL);
 
     StringSet *process_select_attributes = StringSetNew();
+    bool unmatched = false;
 
     memset(column, 0, sizeof(column));
 
@@ -196,34 +197,65 @@ static bool SelectProcess(const char *procentry,
         }
     }
 
+    if (a->owner && !StringSetContains(process_select_attributes, xstrdup("process_owner")))
+    {
+        unmatched = true;
+    }
+
     if (SelectProcRangeMatch("PID", "PID", a->min_pid, a->max_pid, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("pid"));
     }
+    else if (a->min_pid != CF_NOINT)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcRangeMatch("PPID", "PPID", a->min_ppid, a->max_ppid, names, column))
     {
+        Log(LOG_LEVEL_ERR, "ppid min %ld, max %ld", a->min_ppid, a->max_ppid);
         StringSetAdd(process_select_attributes, xstrdup("ppid"));
+    }
+    else if (a->min_ppid != CF_NOINT)
+    {
+        unmatched = true;
     }
 
     if (SelectProcRangeMatch("PGID", "PGID", a->min_pgid, a->max_pgid, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("pgid"));
     }
+    else if (a->min_pgid != CF_NOINT)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcRangeMatch("VSZ", "SZ", a->min_vsize, a->max_vsize, names, column))
     {
+        Log(LOG_LEVEL_ERR, "vsize min %ld, max %ld", a->min_vsize, a->max_vsize);
         StringSetAdd(process_select_attributes, xstrdup("vsize"));
+    }
+    else if (a->min_vsize != CF_NOINT)
+    {
+        unmatched = true;
     }
 
     if (SelectProcRangeMatch("RSS", "RSS", a->min_rsize, a->max_rsize, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("rsize"));
     }
+    else if (a->min_rsize != CF_NOINT)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcTimeCounterRangeMatch("TIME", "TIME", a->min_ttime, a->max_ttime, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("ttime"));
+    }
+    else if (a->min_ttime != CF_NOINT)
+    {
+        unmatched = true;
     }
 
     if (SelectProcTimeAbsRangeMatch
@@ -231,36 +263,67 @@ static bool SelectProcess(const char *procentry,
     {
         StringSetAdd(process_select_attributes, xstrdup("stime"));
     }
+    else if (a->min_stime != CF_NOINT)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcRangeMatch("NI", "PRI", a->min_pri, a->max_pri, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("priority"));
+    }
+    else if (a->min_pri != CF_NOINT)
+    {
+        unmatched = true;
     }
 
     if (SelectProcRangeMatch("NLWP", "NLWP", a->min_thread, a->max_thread, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("threads"));
     }
+    else if (a->min_thread != CF_NOINT)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcRegexMatch("S", "STAT", a->status, true, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("status"));
+    }
+    else if (a->status)
+    {
+        unmatched = true;
     }
 
     if (SelectProcRegexMatch("CMD", "COMMAND", a->command, true, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("command"));
     }
+    else if (a->command)
+    {
+        unmatched = true;
+    }
 
     if (SelectProcRegexMatch("TTY", "TTY", a->tty, true, names, column))
     {
         StringSetAdd(process_select_attributes, xstrdup("tty"));
     }
+    else if (a->tty)
+    {
+        unmatched = true;
+    }
 
     if (!a->process_result)
     {
+        Log(LOG_LEVEL_ERR, "No process_result attribute");
         if (StringSetSize(process_select_attributes) == 0)
         {
+            Log(LOG_LEVEL_ERR, "No process_select attributes");
+            result = EvalProcessResult("", process_select_attributes);
+        }
+        else if (unmatched)
+        {
+            Log(LOG_LEVEL_ERR, "Not all process_select attributes matched");
             result = EvalProcessResult("", process_select_attributes);
         }
         else
@@ -276,12 +339,14 @@ static bool SelectProcess(const char *procentry,
                 WriterWrite(w, attr);
             }
 
+            Log(LOG_LEVEL_ERR, "Have some process_select attributes '%s'", StringWriterData(w));
             result = EvalProcessResult(StringWriterData(w), process_select_attributes);
             WriterClose(w);
         }
     }
     else
     {
+        Log(LOG_LEVEL_ERR, "Have process_result attribute '%s'", a->process_result);
         result = EvalProcessResult(a->process_result, process_select_attributes);
     }
 
@@ -371,6 +436,8 @@ static bool SelectProcRangeMatch(char *name1, char *name2, int min, int max, cha
 
         if ((min <= value) && (value <= max))
         {
+            Log(LOG_LEVEL_VERBOSE, "Selection filter matched absolute '%s/%s' = '%s(%jd)' in [%jd,%jd]", name1, name2, line[i], (intmax_t)value,
+                  (intmax_t)min, (intmax_t)max);
             return true;
         }
         else

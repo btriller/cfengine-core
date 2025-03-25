@@ -1317,7 +1317,7 @@ ProcessSelect GetProcessFilterConstraints(const EvalContext *ctx, const Promise 
 {
     ProcessSelect p;
     char *value;
-    int entries = 0;
+    ARG_UNUSED int entries = 0;
 
     p.owner = PromiseGetConstraintAsList(ctx, "process_owner", pp);
 
@@ -1437,10 +1437,12 @@ ProcessSelect GetProcessFilterConstraints(const EvalContext *ctx, const Promise 
 
     if ((p.process_result = PromiseGetConstraintAsRval(pp, "process_result", RVAL_TYPE_SCALAR)) == NULL)
     {
+    /*
         if (entries)
         {
-            Log(LOG_LEVEL_ERR, "process_select body missing its a process_result return value");
+            Log(LOG_LEVEL_ERR, "process_select body missing its process_result return value");
         }
+    */
     }
 
     return p;
