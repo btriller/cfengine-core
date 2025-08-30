@@ -47,5 +47,5 @@ do
   echo '----------------------------------------------------------------------'
   echo
   (cd $dir/.libs
-    nm $NM_ARGS *.o 2>/dev/null | egrep -v "$FILTER")
+    nm $NM_ARGS *.o 2>/dev/null | grep -Ev "$FILTER")
 done

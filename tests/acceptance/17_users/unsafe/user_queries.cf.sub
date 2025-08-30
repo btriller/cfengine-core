@@ -111,7 +111,7 @@ bundle agent user_is_in_secondary_group(user, group, true_class, false_class)
 {
   commands:
     !windows::
-      "$(G.egrep) '^$(group):[^:]*:[^:]*:[^:]*,?$(user)(,|$)' /etc/group"
+      "$(G.grep) -E '^$(group):[^:]*:[^:]*:[^:]*,?$(user)(,|$)' /etc/group"
         contain => no_output_shell,
         classes => on_success("$(true_class)", "$(false_class)");
 
@@ -131,7 +131,7 @@ bundle agent user_is_in_any_secondary_group(user, true_class, false_class)
 {
   commands:
     !windows::
-      "$(G.egrep) '^[^:]*:[^:]*:[^:]*:[^:]*,?$(user)(,|$)' /etc/group"
+      "$(G.grep) -E '^[^:]*:[^:]*:[^:]*:[^:]*,?$(user)(,|$)' /etc/group"
         contain => no_output_shell,
         classes => on_success("$(true_class)", "$(false_class)");
 
@@ -321,7 +321,7 @@ bundle agent user_is_unlocked(user, true_class, false_class)
   commands:
     passwords_in_shadow::
       # Notice the field at the end. That field (expiry) should be gone or zero.
-      "$(G.egrep) '^$(user):[^:!]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:(:|0:)' /etc/shadow"
+      "$(G.grep) -E '^$(user):[^:!]*:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:(:|0:)' /etc/shadow"
         contain => no_output_shell,
         classes => on_success("$(true_class)", "$(false_class)");
     passwords_in_passwd::

@@ -150,7 +150,7 @@ fi
 CURRENT_PS_UID=__none__
 INSIDE_CONTAINER=-1
 
-if ps --help 2>/dev/null | egrep -e '--cols\b' > /dev/null || ps --help output 2>/dev/null | egrep -e '--cols\b'; then
+if ps --help 2>/dev/null | grep -Ee '--cols\b' > /dev/null || ps --help output 2>/dev/null | egrep -e '--cols\b'; then
     # There is a bug in SUSE which means that ps output will be truncated even
     # when piped to grep, if the terminal size is small. However using --cols
     # will override it. NOTE: On Suse 12 and 15, `ps` mentions `--cols` only
@@ -182,12 +182,12 @@ cf_get_matching_pids()
     # processes inside containers.
 
     if [ "$CURRENT_PS_UID" = "__none__" ]; then
-        CURRENT_PS_UID="$(ps $PS_OPTIONS -ef |egrep "^ *[^ ]+ +$$ "|awk -F' ' '{print $1}')"
+        CURRENT_PS_UID="$(ps $PS_OPTIONS -ef | grep -E "^ *[^ ]+ +$$ "|awk -F' ' '{print $1}')"
     fi
 
     if [ $INSIDE_CONTAINER = -1 ]; then
         # Are we inside a container?
-        if [ -f /proc/self/cgroup ] && sed 's_/\(-\|system\|user\).slice__;s_/user-[0-9]*.slice__;s_/session-[0-9]*.scope__;s_/cfengine3.service__' /proc/self/cgroup | egrep '[0-9]+:devices:/[^:]' > /dev/null; then
+        if [ -f /proc/self/cgroup ] && sed 's_/\(-\|system\|user\).slice__;s_/user-[0-9]*.slice__;s_/session-[0-9]*.scope__;s_/cfengine3.service__' /proc/self/cgroup | grep -E '[0-9]+:devices:/[^:]' > /dev/null; then
             INSIDE_CONTAINER=1
         else
             INSIDE_CONTAINER=0
@@ -222,12 +222,12 @@ cf_get_matching_pids()
                 user_string="[^ ]+"
             fi
 
-            local pids="$(ps $PS_OPTIONS -ef|grep -v grep|egrep "^ *$user_string .*$1"|awk -F' ' '{print $2}')"
+            local pids="$(ps $PS_OPTIONS -ef|grep -v grep|grep -E "^ *$user_string .*$1"|awk -F' ' '{print $2}')"
 
             for pid in $pids; do
                 # If the last character of the cgroup is not the root directory,
                 # then this is a container process.
-                if [ -f /proc/$pid/cgroup ] && sed 's_/\(-\|system\|user\).slice__;s_/user-[0-9]*.slice__;s_/session-[0-9]*.scope__;s_/cfengine3.service__;s_/cf-execd.service__;s_/cf-serverd.service__;s_/cf-monitord.service__' /proc/$pid/cgroup | egrep '[0-9]+:devices:/[^:]' > /dev/null; then
+                if [ -f /proc/$pid/cgroup ] && sed 's_/\(-\|system\|user\).slice__;s_/user-[0-9]*.slice__;s_/session-[0-9]*.scope__;s_/cfengine3.service__;s_/cf-execd.service__;s_/cf-serverd.service__;s_/cf-monitord.service__' /proc/$pid/cgroup | grep -E '[0-9]+:devices:/[^:]' > /dev/null; then
                     if [ $INSIDE_CONTAINER = 1 ]; then
                         echo $pid
                     fi
@@ -244,7 +244,7 @@ cf_get_matching_pids()
 cf_pidfile_pid()
 {
     local pidfile="$1"
-    if egrep -v '^ *[0-9]+ *$' "$pidfile" > /dev/null 2>&1; then
+    if grep -Ev '^ *[0-9]+ *$' "$pidfile" > /dev/null 2>&1; then
         echo "Malformed PID file: $pidfile." 1>&2
     elif [ -f "$pidfile" ]; then
         cat "$pidfile"

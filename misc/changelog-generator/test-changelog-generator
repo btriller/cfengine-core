@@ -413,7 +413,7 @@ EOF
 diff -u expected.txt result.txt
 
 # This line should be there, but no others (note the -v and the inverted error condition).
-if egrep -v '\*\*\* Commit [0-9a-f]{40} had a number 1234 which may be a ticket reference we missed\. Should be manually checked\.' stderr.txt
+if grep -Ev '\*\*\* Commit [0-9a-f]{40} had a number 1234 which may be a ticket reference we missed\. Should be manually checked\.' stderr.txt
 then
     echo 'Unexpected error message in:'
     cat stderr.txt

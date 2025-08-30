@@ -8,10 +8,10 @@
 kill_all_subprocesses() {
   SUB_PID="$(cat pid.$$)"
   # Extract sub process group ID.
-  SUB_PGID="$(ps -W | egrep "^ *$SUB_PID " | sed -e 's/^ *[0-9]\+ \+[0-9]\+ \+\([0-9]\+\).*/\1/')"
+  SUB_PGID="$(ps -W | grep -E "^ *$SUB_PID " | sed -e 's/^ *[0-9]\+ \+[0-9]\+ \+\([0-9]\+\).*/\1/')"
   # Extract list of all processes with that PGID.
   # Note: We extract WINPID, not PID, for use in native Windows command.
-  WINPID_LIST="$(ps -W | egrep "^ *[0-9]+ +[0-9]+ +$SUB_PGID " | sed -e 's/^ *[0-9]\+ \+[0-9]\+ \+[0-9]\+ \+\([0-9]\+\).*/\1/')"
+  WINPID_LIST="$(ps -W | grep -E "^ *[0-9]+ +[0-9]+ +$SUB_PGID " | sed -e 's/^ *[0-9]\+ \+[0-9]\+ \+[0-9]\+ \+\([0-9]\+\).*/\1/')"
   # Kill them all.
   for i in $WINPID_LIST; do
     $0 taskkill -f -t -pid $i

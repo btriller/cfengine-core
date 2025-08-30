@@ -98,7 +98,7 @@ cp init_script_test_helper $CFTEST_PREFIX/bin/cf-test-agent
 
 touch $CFTEST_PREFIX/inputs/promises.cf
 
-if ps --help | egrep -e '--cols\b' > /dev/null
+if ps --help | grep -Ee '--cols\b' > /dev/null
 then
     # There is a bug in SUSE which means that ps output will be truncated even
     # when piped to grep, if the terminal size is small. However using --cols
@@ -306,7 +306,7 @@ for i in cf-test-serverd cf-test-monitord
 do
     cat $OUTFILE | grep "$i.*is not running"
 done
-cat $OUTFILE | egrep "cf-test-execd.*(\.|is )running"
+cat $OUTFILE | grep -E "cf-test-execd.*(\.|is )running"
 cat $OUTFILE | negate grep -i "Warning"
 # When a process is missing retcode must be 3
 test $retcode = 3
@@ -318,7 +318,7 @@ $CFTEST_PREFIX/bin/cf-test-monitord
     && retcode=$? || retcode=$?
 for i in cf-test-execd cf-test-serverd cf-test-monitord
 do
-    cat $OUTFILE | egrep "$i.*(\.|is )running"
+    cat $OUTFILE | grep -E "$i.*(\.|is )running"
 done
 cat $OUTFILE | negate grep -i "is not running"
 cat $OUTFILE | negate grep -i "Warning"
@@ -333,7 +333,7 @@ for i in cf-test-execd cf-test-serverd cf-test-monitord
 do
     cat $OUTFILE | grep "$i.*is not running"
 done
-cat $OUTFILE | negate egrep -i "(\.|is )running"
+cat $OUTFILE | negate grep -Ei "(\.|is )running"
 cat $OUTFILE | negate grep -i "Warning"
 # When a process is missing retcode must be 3
 test $retcode = 3
@@ -348,7 +348,7 @@ for i in cf-test-serverd cf-test-monitord
 do
     cat $OUTFILE | grep "$i.*is not running"
 done
-cat $OUTFILE | egrep "cf-test-execd.*(\.|is )running"
+cat $OUTFILE | grep -E "cf-test-execd.*(\.|is )running"
 cat $OUTFILE | grep -i "Warning.*multiple"
 test $retcode = 3                # TODO should the retcode really be 3 ?
 
@@ -363,7 +363,7 @@ for i in cf-test-serverd cf-test-monitord
 do
     cat $OUTFILE | grep "$i.*is not running"
 done
-cat $OUTFILE | egrep "cf-test-execd.*(\.|is )running"
+cat $OUTFILE | grep -E "cf-test-execd.*(\.|is )running"
 cat $OUTFILE | grep -i "Warning.*$CFTEST_PREFIX/cf-test-execd.pid"
 test $retcode = 3                # TODO should the retcode really be 3 ?
 
